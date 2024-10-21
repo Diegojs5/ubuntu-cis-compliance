@@ -50,7 +50,29 @@ sudo sed -i 's/^#\( minclass = \).*/
 
 ---
 
-### 3. Desabilitar Login Root via SSH
+### 3. Configurar Hash de Senhas com SHA-512
+
+```bash
+sudo sed -i 's/^ENCRYPT_METHOD.*/ENCRYPT_METHOD SHA512/' /etc/login.defs
+```
+
+- **Benchmark CIS Ubuntu**: Seção 5.3.4
+- **Descrição**: Configura o sistema para usar o algoritmo de hashing SHA-512 ao armazenar senhas, garantindo uma proteção mais forte contra ataques de brute-force.
+
+---
+
+### 4. Limitar Tentativas de Login
+
+```bash
+sudo echo "auth required pam_tally2.so onerr=fail audit deny=5 unlock_time=900" >> /etc/pam.d/common-auth
+```
+
+- **Benchmark CIS Ubuntu**: Seção 5.3.3
+- **Descrição**: Configura limites para tentativas de login incorretas (até 5 tentativas falhas), evitando ataques de força bruta.
+
+---
+
+### 5. Desabilitar Login Root via SSH
 
 ```bash
 sudo sed -i 's/^PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config
@@ -62,7 +84,7 @@ sudo systemctl restart sshd
 
 ---
 
-### 4. Habilitar Firewall UFW
+### 6. Habilitar Firewall UFW
 
 ```bash
 sudo ufw enable
@@ -76,7 +98,7 @@ sudo ufw allow ssh
 
 ---
 
-### 5. Auditoria do Sistema (auditd)
+### 7. Auditoria do Sistema (auditd)
 
 ```bash
 sudo apt install auditd -y
@@ -89,7 +111,7 @@ sudo systemctl start auditd
 
 ---
 
-### 6. Verificação de Integridade de Arquivos (AIDE)
+### 8. Verificação de Integridade de Arquivos (AIDE)
 
 ```bash
 sudo apt install aide -y
@@ -102,7 +124,7 @@ sudo cp /var/lib/aide/aide.db.new /var/lib/aide/aide.db
 
 ---
 
-### 7. Desabilitar Serviços Não Necessários
+### 9. Desabilitar Serviços Não Necessários
 
 ```bash
 sudo systemctl disable avahi-daemon
@@ -114,7 +136,7 @@ sudo systemctl disable cups
 
 ---
 
-### 8. Habilitar AppArmor
+### 10. Habilitar AppArmor
 
 ```bash
 sudo systemctl enable apparmor
@@ -126,15 +148,83 @@ sudo systemctl start apparmor
 
 ---
 
-### 9. Gerenciamento de Logs (logrotate)
+### 11. Desativar IPv6 (se não for necessário)
 
 ```bash
-sudo apt install logrotate -y
-sudo logrotate /etc/logrotate.conf
+sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1
+sudo sysctl -w net.ipv6.conf.default.disable_ipv6=1
+```
+
+- **Benchmark CIS Ubuntu**: Seção 3.2.x
+- **Descrição**: Desativa o IPv6 se não for necessário, reduzindo a superfície de ataque ao desabilitar um protocolo que pode ser vulnerável se mal configurado.
+
+---
+
+### 12. Configuração de Segurança do Kernel (Sysctl)
+
+```bash
+# Desabilitar redirecionamento de pacotes IPv4
+sudo sysctl -w net.ipv4.conf.all.send_redirects=0
+sudo sysctl -w net.ipv4.conf.default.send_redirects=0
+
+# Desativar redirecionamento de pacotes ICMP
+sudo sysctl -w net.ipv4.icmp_echo_ignore_broadcasts=1
+sudo sysctl -w net.ipv4.icmp_ignore_bogus_error_responses=1
+
+# Proteger contra ataques SYN
+sudo sysctl -w net.ipv4.tcp_syncookies=1
+```
+
+- **Benchmark CIS Ubuntu**: Seção 3.3.x
+- **Descrição**: Ajusta parâmetros do kernel para aumentar a segurança do sistema, como desabilitar o redirecionamento de pacotes e proteger contra ataques SYN.
+
+---
+
+### 13. Configuração de Permissões de Arquivos Críticos
+
+```bash
+sudo chmod 644 /etc/passwd
+sudo chmod 600 /etc/shadow
+sudo chmod 644 /etc/group
+```
+
+- **Benchmark CIS Ubuntu**: Seção 6.1.x
+- **Descrição**: Garante que os arquivos de sistema mais críticos tenham as permissões corretas para evitar acesso não autorizado.
+
+---
+
+### 14. Desabilitar Contas Inativas
+
+```bash
+sudo useradd -D -f 30
+```
+
+- **Benchmark CIS Ubuntu**: Seção 5.4.2
+- **Descrição**: Desabilita automaticamente contas de usuários que estão inativas por mais de 30 dias.
+
+---
+
+### 15. Proteger o GRUB com uma Senha
+
+```bash
+sudo grub-mkpasswd-pbkdf2
+```
+
+- **Benchmark CIS Ubuntu**: Seção 1.5.3
+- **Descrição**: Protege o bootloader (GRUB) com uma senha para evitar alterações não autorizadas nas configurações do boot.
+
+---
+
+### 16. Configurar `rsyslog` para Logs
+
+```bash
+sudo apt install rsyslog -y
+sudo systemctl enable rsyslog
+sudo systemctl start rsyslog
 ```
 
 - **Benchmark CIS Ubuntu**: Seção 4.2.x
-- **Descrição**: Configura o **logrotate** para gerenciar o crescimento de arquivos de log, garantindo que logs antigos sejam arquivados e que o espaço no disco seja gerenciado eficientemente.
+- **Descrição**: Instala e configura o `rsyslog` para gerenciar os logs do sistema, garantindo que eles sejam capturados e armazenados corretamente.
 
 ---
 
