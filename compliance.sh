@@ -32,6 +32,18 @@ sudo ufw default deny incoming
 sudo ufw default allow outgoing
 sudo ufw allow ssh
 
+# Permitir tráfego na porta HTTPS (443) para GitHub e outros serviços web
+sudo ufw allow 443/tcp
+
+# Permitir tráfego na porta HTTP (80) para serviços web
+sudo ufw allow 80/tcp
+
+# Permitir acesso ao GitHub via SSH (caso esteja sendo usado)
+sudo ufw allow out to any port 22 proto tcp
+
+# Exibir o status do UFW para verificar as regras
+sudo ufw status verbose
+
 # Instalar e configurar auditd
 sudo apt install auditd -y
 sudo systemctl enable auditd
@@ -84,3 +96,4 @@ sudo systemctl enable rsyslog
 sudo systemctl start rsyslog
 
 echo "Configurações de compliance CIS Benchmark aplicadas com sucesso!"
+
